@@ -113,7 +113,9 @@ function App() {
   }, []);
 
   const handleSeek = useCallback((time: number) => {
-    setSeekTo(time);
+    // Reset first so re-seeking to the same time triggers the effect
+    setSeekTo(null);
+    requestAnimationFrame(() => setSeekTo(time));
   }, []);
 
   const handleToggleAutoPlay = useCallback(() => {
