@@ -122,18 +122,35 @@ function App() {
     setAutoPlay(prev => !prev);
   }, []);
 
-  const handleTrackFinished = useCallback(() => {
-    if (!autoPlay || !currentTrack || files.length === 0) return;
-    const currentIndex = files.findIndex(f => {
+  const currentTrackIndex = useMemo(() => {
+    if (!currentTrack || files.length === 0) return -1;
+    return files.findIndex(f => {
       const fileUrl = f.path.startsWith('file:') ? f.path : `file:///${f.path}`;
       return fileUrl === currentTrack;
     });
-    if (currentIndex >= 0 && currentIndex < files.length - 1) {
-      const nextFile = files[currentIndex + 1];
-      const nextUrl = nextFile.path.startsWith('file:') ? nextFile.path : `file:///${nextFile.path}`;
-      setCurrentTrack(nextUrl);
-    }
-  }, [autoPlay, currentTrack, files]);
+  }, [currentTrack, files]);
+
+  const hasPrev = currentTrackIndex > 0;
+  const hasNext = currentTrackIndex >= 0 && currentTrackIndex < files.length - 1;
+
+  const handlePrev = useCallback(() => {
+    if (!hasPrev) return;
+    const prevFile = files[currentTrackIndex - 1];
+    const prevUrl = prevFile.path.startsWith('file:') ? prevFile.path : `file:///${prevFile.path}`;
+    setCurrentTrack(prevUrl);
+  }, [hasPrev, files, currentTrackIndex]);
+
+  const handleNext = useCallback(() => {
+    if (!hasNext) return;
+    const nextFile = files[currentTrackIndex + 1];
+    const nextUrl = nextFile.path.startsWith('file:') ? nextFile.path : `file:///${nextFile.path}`;
+    setCurrentTrack(nextUrl);
+  }, [hasNext, files, currentTrackIndex]);
+
+  const handleTrackFinished = useCallback(() => {
+    if (!autoPlay || !hasNext) return;
+    handleNext();
+  }, [autoPlay, hasNext, handleNext]);
 
   return (
     <div className="app-container">
@@ -173,8 +190,12 @@ function App() {
             annotations={currentAnnotations}
             seekTo={seekTo}
             autoPlay={autoPlay}
+            hasPrev={hasPrev}
+            hasNext={hasNext}
             onToggleAutoPlay={handleToggleAutoPlay}
             onFinished={handleTrackFinished}
+            onPrev={handlePrev}
+            onNext={handleNext}
             onAnnotationCreated={handleAnnotationCreated}
             onAnnotationUpdated={handleAnnotationUpdated}
             onTimeUpdate={handleTimeUpdate}

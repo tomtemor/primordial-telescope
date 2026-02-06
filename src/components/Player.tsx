@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
-import { Play, Pause, Square, ZoomIn, ZoomOut, MousePointer2, Highlighter, ListMusic } from 'lucide-react';
+import { Play, Pause, Square, ZoomIn, ZoomOut, MousePointer2, Highlighter, ListMusic, SkipBack, SkipForward } from 'lucide-react';
 import styles from './Player.module.css';
 import type { Annotation } from './AnnotationList';
 
@@ -10,14 +10,18 @@ interface PlayerProps {
     annotations: Annotation[];
     seekTo?: number | null;
     autoPlay: boolean;
+    hasPrev: boolean;
+    hasNext: boolean;
     onToggleAutoPlay: () => void;
     onFinished: () => void;
+    onPrev: () => void;
+    onNext: () => void;
     onAnnotationCreated: (annotation: Annotation) => void;
     onAnnotationUpdated: (annotation: Annotation) => void;
     onTimeUpdate?: (time: number) => void;
 }
 
-export const Player = ({ url, annotations, seekTo, autoPlay, onToggleAutoPlay, onFinished, onAnnotationCreated, onAnnotationUpdated, onTimeUpdate }: PlayerProps) => {
+export const Player = ({ url, annotations, seekTo, autoPlay, hasPrev, hasNext, onToggleAutoPlay, onFinished, onPrev, onNext, onAnnotationCreated, onAnnotationUpdated, onTimeUpdate }: PlayerProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const wavesurferRef = useRef<WaveSurfer | null>(null);
     const regionsRef = useRef<RegionsPlugin | null>(null);
@@ -233,6 +237,38 @@ export const Player = ({ url, annotations, seekTo, autoPlay, onToggleAutoPlay, o
         }
     }, [zoom, isReady]);
 
+    // Spacebar play/pause
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Don't trigger if user is typing in an input/textarea
+            const tag = (e.target as HTMLElement).tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+            if (e.code === 'Space') {
+                e.preventDefault();
+                wavesurferRef.current?.playPause();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
+    // Scroll to zoom on waveform
+    useEffect(() => {
+        const container = containerRef.current;
+        if (!container) return;
+
+        const handleWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            setZoom(prev => {
+                const delta = e.deltaY > 0 ? -20 : 20;
+                return Math.max(10, Math.min(500, prev + delta));
+            });
+        };
+        container.addEventListener('wheel', handleWheel, { passive: false });
+        return () => container.removeEventListener('wheel', handleWheel);
+    }, []);
+
     const formatTime = (seconds: number) => {
         const m = Math.floor(seconds / 60);
         const s = Math.floor(seconds % 60);
@@ -285,11 +321,17 @@ export const Player = ({ url, annotations, seekTo, autoPlay, onToggleAutoPlay, o
 
             <div className={styles.controls}>
                 <div className={styles.transport}>
+                    <button className={styles.btn} onClick={onPrev} disabled={!hasPrev} title="Previous Track">
+                        <SkipBack size={20} />
+                    </button>
                     <button className={styles.btn} onClick={togglePlay} disabled={!isReady}>
                         {isPlaying ? <Pause size={24} /> : <Play size={24} />}
                     </button>
                     <button className={styles.btn} onClick={stop} disabled={!isReady}>
                         <Square size={20} />
+                    </button>
+                    <button className={styles.btn} onClick={onNext} disabled={!hasNext} title="Next Track">
+                        <SkipForward size={20} />
                     </button>
                     <span className={styles.timeDisplay}>
                         {formatTime(currentTime)} / {formatTime(duration)}
