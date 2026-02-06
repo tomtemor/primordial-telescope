@@ -1,0 +1,57 @@
+:root {
+  /* Premium Dark Theme */
+  --bg-app: #0a0a0e;
+  --bg-panel: #121216;
+  --bg-hover: #1c1c22;
+  
+  --color-primary: #00f0ff; /* Electric Cyan */
+  --color-primary-dim: rgba(0, 240, 255, 0.1);
+  --color-accent: #4d4dff; /* Neon Blue */
+  
+  --text-main: #e0e0e0;
+  --text-muted: #888899;
+  
+  --border-subtle: #2a2a35;
+  
+  font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark;
+  color: var(--text-main);
+  background-color: var(--bg-app);
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  width: 100vw;
+  overflow: hidden; /* App-like feel */
+  user-select: none; /* App-like feel */
+}
+
+#root {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-app);
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

@@ -1,0 +1,271 @@
+import { useRef, useEffect, useState, useCallback } from 'react';
+import WaveSurfer from 'wavesurfer.js';
+import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
+import { Play, Pause, Square, ZoomIn, ZoomOut, MousePointer2, Highlighter } from 'lucide-react';
+import styles from './Player.module.css';
+import type { Annotation } from './AnnotationList';
+
+interface PlayerProps {
+    url?: string;
+    annotations: Annotation[];
+    seekTo?: number | null;
+    onAnnotationCreated: (annotation: Annotation) => void;
+    onAnnotationUpdated: (annotation: Annotation) => void;
+    onTimeUpdate?: (time: number) => void;
+}
+
+export const Player = ({ url, annotations, seekTo, onAnnotationCreated, onAnnotationUpdated, onTimeUpdate }: PlayerProps) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const wavesurferRef = useRef<WaveSurfer | null>(null);
+    const regionsRef = useRef<RegionsPlugin | null>(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [zoom, setZoom] = useState(10); // Min px per sec
+    const [isReady, setIsReady] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [isAnnotationMode, setIsAnnotationMode] = useState(false);
+
+    // Refs for callbacks to ensure stable closures in effects without re-running them
+    const onTimeUpdateRef = useRef(onTimeUpdate);
+    const onAnnotationCreatedRef = useRef(onAnnotationCreated);
+    const onAnnotationUpdatedRef = useRef(onAnnotationUpdated);
+
+    // Ref to prevent infinite loops when syncing regions from props
+    // We track IDs that we are currently adding programmatically
+    const processingRegionsRef = useRef(new Set<string>());
+    const isSyncingRef = useRef(false);
+
+    useEffect(() => { onTimeUpdateRef.current = onTimeUpdate; }, [onTimeUpdate]);
+    useEffect(() => { onAnnotationCreatedRef.current = onAnnotationCreated; }, [onAnnotationCreated]);
+    useEffect(() => { onAnnotationUpdatedRef.current = onAnnotationUpdated; }, [onAnnotationUpdated]);
+
+    // Initialize WaveSurfer once (no URL in constructor — loaded via separate effect)
+    useEffect(() => {
+        if (!containerRef.current) return;
+
+        const ws = WaveSurfer.create({
+            container: containerRef.current,
+            waveColor: '#4d4dff', // Neon Blue
+            progressColor: '#00f0ff', // Electric Cyan
+            cursorColor: '#ffffff',
+            barWidth: 2,
+            barGap: 3,
+            barRadius: 2,
+            height: 250,
+            minPxPerSec: 10,
+            fillParent: true,
+            // Do NOT pass url here — let the URL effect handle loading
+        });
+
+        const wsRegions = RegionsPlugin.create();
+        ws.registerPlugin(wsRegions);
+        regionsRef.current = wsRegions;
+
+        ws.on('ready', () => setIsReady(true));
+        ws.on('play', () => setIsPlaying(true));
+        ws.on('pause', () => setIsPlaying(false));
+        ws.on('finish', () => setIsPlaying(false));
+        ws.on('timeupdate', (currentTime) => onTimeUpdateRef.current?.(currentTime));
+        ws.on('error', (e) => {
+            console.error("WaveSurfer internal error:", e);
+            setError(typeof e === 'string' ? e : "Playback error occurred");
+        });
+
+        // Region Events
+        wsRegions.on('region-created', (region) => {
+            // Ignore all events during programmatic sync
+            if (isSyncingRef.current) return;
+            // Ignore regions we added programmatically
+            if (processingRegionsRef.current.has(region.id)) return;
+            // Ignore regions that already have an external ID (synced from props)
+            if (region.id.startsWith('ann-external')) return;
+
+            const newId = `ann-external-${Math.random().toString(36).substr(2, 9)}`;
+            const newAnn: Annotation = {
+                id: newId,
+                start: region.start,
+                end: region.end,
+                text: ''
+            };
+
+            onAnnotationCreatedRef.current?.(newAnn);
+            region.remove();
+        });
+
+        wsRegions.on('region-updated', (region) => {
+            // Ignore all events during programmatic sync
+            if (isSyncingRef.current) return;
+
+            if (region.id.startsWith('ann-external')) {
+                onAnnotationUpdatedRef.current?.({
+                    id: region.id,
+                    start: region.start,
+                    end: region.end,
+                    text: ''
+                });
+            }
+        });
+
+        wavesurferRef.current = ws;
+
+        return () => {
+            ws.destroy();
+        };
+    }, []);
+
+    // Track previous annotations to avoid unnecessary re-syncs
+    const prevAnnotationsRef = useRef<Annotation[]>([]);
+
+    // Sync Regions from Props
+    useEffect(() => {
+        if (!regionsRef.current || !isReady) return;
+
+        // Skip sync if annotations haven't actually changed in content
+        const prev = prevAnnotationsRef.current;
+        const changed = annotations.length !== prev.length ||
+            annotations.some((a, i) => {
+                const p = prev[i];
+                return !p || a.id !== p.id || a.start !== p.start || a.end !== p.end || a.text !== p.text;
+            });
+        if (!changed) return;
+
+        prevAnnotationsRef.current = annotations;
+
+        isSyncingRef.current = true;
+
+        // Populate processing set with incoming IDs so creation events ignore them
+        processingRegionsRef.current = new Set(annotations.map(a => a.id));
+
+        regionsRef.current.clearRegions();
+
+        annotations.forEach(ann => {
+            regionsRef.current?.addRegion({
+                id: ann.id,
+                start: ann.start,
+                end: ann.end,
+                color: 'rgba(0, 240, 255, 0.2)',
+                drag: true,
+                resize: true,
+                content: ann.text
+            });
+        });
+
+        // Defer unsetting the flag so any synchronous event handlers triggered
+        // by clearRegions/addRegion are still guarded
+        requestAnimationFrame(() => {
+            isSyncingRef.current = false;
+        });
+    }, [annotations, isReady]);
+
+    // Ref to store the disable function from enableDragSelection
+    const disableDragSelectionRef = useRef<(() => void) | null>(null);
+
+    // Handle Interaction Mode (Annotation vs Navigation)
+    useEffect(() => {
+        if (!wavesurferRef.current || !regionsRef.current) return;
+
+        // Always clean up previous drag selection handler if it exists
+        if (disableDragSelectionRef.current) {
+            disableDragSelectionRef.current();
+            disableDragSelectionRef.current = null;
+        }
+
+        if (isAnnotationMode) {
+            // Annotation Mode: Disable seek, enable region drag creation
+            wavesurferRef.current.setOptions({ interact: false });
+            disableDragSelectionRef.current = regionsRef.current.enableDragSelection({
+                color: 'rgba(0, 240, 255, 0.4)',
+            });
+        } else {
+            // Navigation Mode: Enable seek, disable region drag creation (implicit by cleaning up above)
+            wavesurferRef.current.setOptions({ interact: true });
+        }
+    }, [isAnnotationMode, isReady]); // Re-run when mode changes or player becomes ready
+
+    // Handle Seek
+    useEffect(() => {
+        if (wavesurferRef.current && seekTo !== undefined && seekTo !== null) {
+            wavesurferRef.current.setTime(seekTo);
+        }
+    }, [seekTo]);
+
+    // Handle URL changes
+    useEffect(() => {
+        if (wavesurferRef.current && url) {
+            console.log('Loading URL:', url);
+            setIsReady(false);
+            setError(null);
+            wavesurferRef.current.load(url).catch(e => {
+                console.error("WaveSurfer load error:", e);
+                setError(e.message);
+            });
+        }
+    }, [url]);
+
+    // Handle Zoom changes
+    useEffect(() => {
+        if (wavesurferRef.current && isReady) {
+            wavesurferRef.current.zoom(zoom);
+        }
+    }, [zoom, isReady]);
+
+    const togglePlay = useCallback(() => {
+        wavesurferRef.current?.playPause();
+    }, []);
+
+    const stop = useCallback(() => {
+        wavesurferRef.current?.stop();
+    }, []);
+
+    return (
+        <div className={styles.playerContainer}>
+            {error && <div style={{ color: 'red', padding: '10px', background: 'rgba(255,0,0,0.1)', borderRadius: '4px', marginBottom: '10px' }}>Error: {error}</div>}
+
+            <div className={styles.topControls}>
+                <div className={styles.modeSwitch}>
+                    <button
+                        className={`${styles.modeBtn} ${!isAnnotationMode ? styles.active : ''}`}
+                        onClick={() => setIsAnnotationMode(false)}
+                        title="Navigation Mode (Click to Seek)"
+                    >
+                        <MousePointer2 size={16} />
+                        <span>Navigate</span>
+                    </button>
+                    <button
+                        className={`${styles.modeBtn} ${isAnnotationMode ? styles.active : ''}`}
+                        onClick={() => setIsAnnotationMode(true)}
+                        title="Annotation Mode (Drag to Mark)"
+                    >
+                        <Highlighter size={16} />
+                        <span>Annotate</span>
+                    </button>
+                </div>
+            </div>
+
+            <div className={styles.waveform} ref={containerRef} />
+
+            <div className={styles.controls}>
+                <div className={styles.transport}>
+                    <button className={styles.btn} onClick={togglePlay} disabled={!isReady}>
+                        {isPlaying ? <Pause size={24} /> : <Play size={24} />}
+                    </button>
+                    <button className={styles.btn} onClick={stop} disabled={!isReady}>
+                        <Square size={20} />
+                    </button>
+                </div>
+
+                <div className={styles.zoomControls}>
+                    <ZoomOut size={16} />
+                    <input
+                        type="range"
+                        min="10"
+                        max="500"
+                        value={zoom}
+                        onChange={(e) => setZoom(Number(e.target.value))}
+                        className={styles.slider}
+                    />
+                    <ZoomIn size={16} />
+                </div>
+            </div>
+        </div>
+    );
+};
