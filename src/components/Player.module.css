@@ -37,6 +37,14 @@
     align-items: center;
 }
 
+.timeDisplay {
+    font-size: 0.85rem;
+    font-family: 'Consolas', 'Monaco', monospace;
+    color: var(--text-muted);
+    margin-left: 4px;
+    letter-spacing: 0.5px;
+}
+
 .btn {
     background: none;
     border: none;

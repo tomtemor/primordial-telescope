@@ -23,6 +23,8 @@ export const Player = ({ url, annotations, seekTo, onAnnotationCreated, onAnnota
     const [isReady, setIsReady] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isAnnotationMode, setIsAnnotationMode] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
 
     // Refs for callbacks to ensure stable closures in effects without re-running them
     const onTimeUpdateRef = useRef(onTimeUpdate);
@@ -60,11 +62,17 @@ export const Player = ({ url, annotations, seekTo, onAnnotationCreated, onAnnota
         ws.registerPlugin(wsRegions);
         regionsRef.current = wsRegions;
 
-        ws.on('ready', () => setIsReady(true));
+        ws.on('ready', () => {
+            setIsReady(true);
+            setDuration(ws.getDuration());
+        });
         ws.on('play', () => setIsPlaying(true));
         ws.on('pause', () => setIsPlaying(false));
         ws.on('finish', () => setIsPlaying(false));
-        ws.on('timeupdate', (currentTime) => onTimeUpdateRef.current?.(currentTime));
+        ws.on('timeupdate', (time) => {
+            setCurrentTime(time);
+            onTimeUpdateRef.current?.(time);
+        });
         ws.on('error', (e) => {
             console.error("WaveSurfer internal error:", e);
             setError(typeof e === 'string' ? e : "Playback error occurred");
@@ -208,6 +216,13 @@ export const Player = ({ url, annotations, seekTo, onAnnotationCreated, onAnnota
         }
     }, [zoom, isReady]);
 
+    const formatTime = (seconds: number) => {
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        const ms = Math.floor((seconds % 1) * 100);
+        return `${m}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+    };
+
     const togglePlay = useCallback(() => {
         wavesurferRef.current?.playPause();
     }, []);
@@ -251,6 +266,9 @@ export const Player = ({ url, annotations, seekTo, onAnnotationCreated, onAnnota
                     <button className={styles.btn} onClick={stop} disabled={!isReady}>
                         <Square size={20} />
                     </button>
+                    <span className={styles.timeDisplay}>
+                        {formatTime(currentTime)} / {formatTime(duration)}
+                    </span>
                 </div>
 
                 <div className={styles.zoomControls}>
