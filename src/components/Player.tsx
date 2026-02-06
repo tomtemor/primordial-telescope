@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
-import { Play, Pause, Square, ZoomIn, ZoomOut, MousePointer2, Highlighter } from 'lucide-react';
+import { Play, Pause, Square, ZoomIn, ZoomOut, MousePointer2, Highlighter, ListMusic } from 'lucide-react';
 import styles from './Player.module.css';
 import type { Annotation } from './AnnotationList';
 
@@ -9,12 +9,15 @@ interface PlayerProps {
     url?: string;
     annotations: Annotation[];
     seekTo?: number | null;
+    autoPlay: boolean;
+    onToggleAutoPlay: () => void;
+    onFinished: () => void;
     onAnnotationCreated: (annotation: Annotation) => void;
     onAnnotationUpdated: (annotation: Annotation) => void;
     onTimeUpdate?: (time: number) => void;
 }
 
-export const Player = ({ url, annotations, seekTo, onAnnotationCreated, onAnnotationUpdated, onTimeUpdate }: PlayerProps) => {
+export const Player = ({ url, annotations, seekTo, autoPlay, onToggleAutoPlay, onFinished, onAnnotationCreated, onAnnotationUpdated, onTimeUpdate }: PlayerProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const wavesurferRef = useRef<WaveSurfer | null>(null);
     const regionsRef = useRef<RegionsPlugin | null>(null);
@@ -30,15 +33,21 @@ export const Player = ({ url, annotations, seekTo, onAnnotationCreated, onAnnota
     const onTimeUpdateRef = useRef(onTimeUpdate);
     const onAnnotationCreatedRef = useRef(onAnnotationCreated);
     const onAnnotationUpdatedRef = useRef(onAnnotationUpdated);
+    const onFinishedRef = useRef(onFinished);
 
     // Ref to prevent infinite loops when syncing regions from props
     // We track IDs that we are currently adding programmatically
     const processingRegionsRef = useRef(new Set<string>());
     const isSyncingRef = useRef(false);
+    const shouldAutoStartRef = useRef(false);
 
     useEffect(() => { onTimeUpdateRef.current = onTimeUpdate; }, [onTimeUpdate]);
     useEffect(() => { onAnnotationCreatedRef.current = onAnnotationCreated; }, [onAnnotationCreated]);
     useEffect(() => { onAnnotationUpdatedRef.current = onAnnotationUpdated; }, [onAnnotationUpdated]);
+    useEffect(() => { onFinishedRef.current = onFinished; }, [onFinished]);
+
+    const autoPlayRef = useRef(autoPlay);
+    useEffect(() => { autoPlayRef.current = autoPlay; }, [autoPlay]);
 
     // Initialize WaveSurfer once (no URL in constructor — loaded via separate effect)
     useEffect(() => {
@@ -65,10 +74,17 @@ export const Player = ({ url, annotations, seekTo, onAnnotationCreated, onAnnota
         ws.on('ready', () => {
             setIsReady(true);
             setDuration(ws.getDuration());
+            if (shouldAutoStartRef.current) {
+                shouldAutoStartRef.current = false;
+                ws.play();
+            }
         });
         ws.on('play', () => setIsPlaying(true));
         ws.on('pause', () => setIsPlaying(false));
-        ws.on('finish', () => setIsPlaying(false));
+        ws.on('finish', () => {
+            setIsPlaying(false);
+            onFinishedRef.current?.();
+        });
         ws.on('timeupdate', (time) => {
             setCurrentTime(time);
             onTimeUpdateRef.current?.(time);
@@ -200,6 +216,7 @@ export const Player = ({ url, annotations, seekTo, onAnnotationCreated, onAnnota
     useEffect(() => {
         if (wavesurferRef.current && url) {
             console.log('Loading URL:', url);
+            shouldAutoStartRef.current = autoPlayRef.current;
             setIsReady(false);
             setError(null);
             wavesurferRef.current.load(url).catch(e => {
@@ -236,6 +253,14 @@ export const Player = ({ url, annotations, seekTo, onAnnotationCreated, onAnnota
             {error && <div style={{ color: 'red', padding: '10px', background: 'rgba(255,0,0,0.1)', borderRadius: '4px', marginBottom: '10px' }}>Error: {error}</div>}
 
             <div className={styles.topControls}>
+                <button
+                    className={`${styles.autoPlayBtn} ${autoPlay ? styles.active : ''}`}
+                    onClick={onToggleAutoPlay}
+                    title={autoPlay ? 'Auto-play On' : 'Auto-play Off'}
+                >
+                    <ListMusic size={16} />
+                    <span>Auto-play</span>
+                </button>
                 <div className={styles.modeSwitch}>
                     <button
                         className={`${styles.modeBtn} ${!isAnnotationMode ? styles.active : ''}`}

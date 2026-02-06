@@ -16,6 +16,7 @@ function App() {
   const [projectAnnotations, setProjectAnnotations] = useState<Record<string, Annotation[]>>({});
   const [currentTime, setCurrentTime] = useState(0);
   const [seekTo, setSeekTo] = useState<number | null>(null);
+  const [autoPlay, setAutoPlay] = useState(false);
 
   const handleOpenFolder = useCallback(async () => {
     try {
@@ -113,12 +114,24 @@ function App() {
 
   const handleSeek = useCallback((time: number) => {
     setSeekTo(time);
-    // Reset after a tick to allow re-seeking to same time if needed?
-    // Or Player handles prop change.
-    // If we seek to same time, useEffect might not fire.
-    // Better: force a small delta or just rely on new value.
-    // For now, simpler is fine.
   }, []);
+
+  const handleToggleAutoPlay = useCallback(() => {
+    setAutoPlay(prev => !prev);
+  }, []);
+
+  const handleTrackFinished = useCallback(() => {
+    if (!autoPlay || !currentTrack || files.length === 0) return;
+    const currentIndex = files.findIndex(f => {
+      const fileUrl = f.path.startsWith('file:') ? f.path : `file:///${f.path}`;
+      return fileUrl === currentTrack;
+    });
+    if (currentIndex >= 0 && currentIndex < files.length - 1) {
+      const nextFile = files[currentIndex + 1];
+      const nextUrl = nextFile.path.startsWith('file:') ? nextFile.path : `file:///${nextFile.path}`;
+      setCurrentTrack(nextUrl);
+    }
+  }, [autoPlay, currentTrack, files]);
 
   return (
     <div className="app-container">
@@ -157,6 +170,9 @@ function App() {
             url={currentTrack}
             annotations={currentAnnotations}
             seekTo={seekTo}
+            autoPlay={autoPlay}
+            onToggleAutoPlay={handleToggleAutoPlay}
+            onFinished={handleTrackFinished}
             onAnnotationCreated={handleAnnotationCreated}
             onAnnotationUpdated={handleAnnotationUpdated}
             onTimeUpdate={handleTimeUpdate}

@@ -102,7 +102,34 @@
 .topControls {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
     margin-bottom: 10px;
+}
+
+.autoPlayBtn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.autoPlayBtn:hover {
+    color: var(--text-main);
+}
+
+.autoPlayBtn.active {
+    background: var(--bg-hover);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    font-weight: 500;
 }
 
 .modeSwitch {
