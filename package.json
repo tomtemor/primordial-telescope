@@ -1,8 +1,10 @@
 {
   "name": "wavejotter",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "A lightweight audio annotation tool",
+  "author": "Wavejotter Team",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "concurrently -k \"npm run dev:react\" \"npm run dev:electron\"",
@@ -10,7 +12,31 @@
     "dev:electron": "wait-on tcp:5173 && tsc -p electron/tsconfig.json && echo {\"type\":\"commonjs\"} > dist-electron/package.json && cross-env NODE_ENV=development electron .",
     "build": "tsc -b && vite build && tsc -p electron/tsconfig.json && echo {\"type\":\"commonjs\"} > dist-electron/package.json",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.wavejotter.app",
+    "productName": "Wavejotter",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
   },
   "dependencies": {
     "lucide-react": "^0.563.0",

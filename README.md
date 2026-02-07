@@ -44,7 +44,7 @@ Wavejotter is a powerful, lightweight audio annotation tool built with Electron 
 To create an executable for your OS (Windows, macOS, Linux):
 
 ```bash
-npm run build
+npm run dist
 ```
 
 The output will be in the `dist` folder.
