@@ -6,7 +6,12 @@ try {
     electron_1.contextBridge.exposeInMainWorld('audioApp', {
         openFolder: function (path) { return electron_1.ipcRenderer.invoke('dialog:openFolder', path); },
         saveProject: function (content) { return electron_1.ipcRenderer.invoke('dialog:saveProject', content); },
-        loadProject: function () { return electron_1.ipcRenderer.invoke('dialog:loadProject'); }
+        loadProject: function () { return electron_1.ipcRenderer.invoke('dialog:loadProject'); },
+        saveProjectToPath: function (filePath, content) { return electron_1.ipcRenderer.invoke('project:saveToPath', filePath, content); },
+        loadProjectFromPath: function (filePath) { return electron_1.ipcRenderer.invoke('project:loadFromPath', filePath); },
+        getSettings: function () { return electron_1.ipcRenderer.invoke('settings:get'); },
+        setSettings: function (data) { return electron_1.ipcRenderer.invoke('settings:set', data); },
+        renameFile: function (oldPath, newPath) { return electron_1.ipcRenderer.invoke('file:rename', oldPath, newPath); }
     });
     console.log('audioApp exposed successfully');
 }

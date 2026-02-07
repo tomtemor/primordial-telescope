@@ -54,6 +54,12 @@
   font-weight: 500;
 }
 
+.folder-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-left: 12px;
+}
+
 .player-wrapper {
   flex: 1;
   min-height: 0;

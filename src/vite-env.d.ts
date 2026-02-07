@@ -15,6 +15,11 @@ interface AudioAppAPI {
     openFolder: (path?: string) => Promise<FolderResult | null>;
     saveProject: (content: string) => Promise<{ success: boolean; filePath?: string }>;
     loadProject: () => Promise<any | null>;
+    saveProjectToPath: (filePath: string, content: string) => Promise<{ success: boolean }>;
+    loadProjectFromPath: (filePath: string) => Promise<any | null>;
+    getSettings: () => Promise<Record<string, any>>;
+    setSettings: (data: Record<string, unknown>) => Promise<{ success: boolean }>;
+    renameFile: (oldPath: string, newPath: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 interface Window {

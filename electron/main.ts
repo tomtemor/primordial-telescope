@@ -80,7 +80,7 @@ ipcMain.handle('dialog:saveProject', async (_, content: string) => {
 
     try {
         await fs.promises.writeFile(filePath, content, 'utf-8');
-        return { success: true, filePath };
+        return { success: true, filePath: filePath.replace(/\\/g, '/') };
     } catch (e) {
         console.error(e);
         return { success: false };
@@ -98,10 +98,75 @@ ipcMain.handle('dialog:loadProject', async () => {
 
     try {
         const content = await fs.promises.readFile(filePaths[0], 'utf-8');
-        return JSON.parse(content);
+        const data = JSON.parse(content);
+        data._filePath = filePaths[0].replace(/\\/g, '/');
+        return data;
     } catch (e) {
         console.error(e);
         return null;
+    }
+});
+
+// Save project to a known path (no dialog) — used by auto-save
+ipcMain.handle('project:saveToPath', async (_, filePath: string, content: string) => {
+    try {
+        await fs.promises.writeFile(filePath, content, 'utf-8');
+        return { success: true };
+    } catch (e) {
+        console.error('Auto-save error:', e);
+        return { success: false };
+    }
+});
+
+// Load project from a known path (no dialog) — used by startup auto-load
+ipcMain.handle('project:loadFromPath', async (_, filePath: string) => {
+    try {
+        const content = await fs.promises.readFile(filePath, 'utf-8');
+        const data = JSON.parse(content);
+        data._filePath = filePath.replace(/\\/g, '/');
+        return data;
+    } catch (e) {
+        console.error('Load from path error:', e);
+        return null;
+    }
+});
+
+// Settings persistence
+const settingsPath = path.join(app.getPath('userData'), 'settings.json');
+
+ipcMain.handle('settings:get', async () => {
+    try {
+        const content = await fs.promises.readFile(settingsPath, 'utf-8');
+        return JSON.parse(content);
+    } catch {
+        return {};
+    }
+});
+
+ipcMain.handle('settings:set', async (_, data: Record<string, unknown>) => {
+    try {
+        let existing: Record<string, unknown> = {};
+        try {
+            const content = await fs.promises.readFile(settingsPath, 'utf-8');
+            existing = JSON.parse(content);
+        } catch { /* file doesn't exist yet */ }
+        const merged = { ...existing, ...data };
+        await fs.promises.writeFile(settingsPath, JSON.stringify(merged, null, 2), 'utf-8');
+        return { success: true };
+    } catch (e) {
+        console.error('Settings save error:', e);
+        return { success: false };
+    }
+});
+
+// Rename a file on disk
+ipcMain.handle('file:rename', async (_, oldPath: string, newPath: string) => {
+    try {
+        await fs.promises.rename(oldPath, newPath);
+        return { success: true };
+    } catch (e: any) {
+        console.error('Rename error:', e);
+        return { success: false, error: e.message };
     }
 });
 

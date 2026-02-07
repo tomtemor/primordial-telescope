@@ -1,3 +1,4 @@
+import { useState, useRef, useCallback } from 'react';
 import { FolderOpen, Music } from 'lucide-react';
 import styles from './Playlist.module.css';
 
@@ -12,9 +13,59 @@ interface PlaylistProps {
     currentTrack?: string;
     onTrackSelect: (path: string) => void;
     onOpenFolder: () => void;
+    onRenameFile: (oldPath: string, newName: string) => void;
 }
 
-export const Playlist = ({ folderName, files, currentTrack, onTrackSelect, onOpenFolder }: PlaylistProps) => {
+export const Playlist = ({ folderName, files, currentTrack, onTrackSelect, onOpenFolder, onRenameFile }: PlaylistProps) => {
+    const [editingPath, setEditingPath] = useState<string | null>(null);
+    const [editName, setEditName] = useState('');
+    const [editExt, setEditExt] = useState('');
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Use a ref callback to focus & select once when the input mounts
+    const setInputRef = useCallback((el: HTMLInputElement | null) => {
+        (inputRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
+        if (el) {
+            el.focus();
+            el.select();
+        }
+    }, []);
+
+    const handleDoubleClick = (e: React.MouseEvent, file: AudioFile) => {
+        e.stopPropagation();
+        const dotIndex = file.name.lastIndexOf('.');
+        if (dotIndex > 0) {
+            setEditName(file.name.substring(0, dotIndex));
+            setEditExt(file.name.substring(dotIndex));
+        } else {
+            setEditName(file.name);
+            setEditExt('');
+        }
+        setEditingPath(file.path);
+    };
+
+    const handleRenameConfirm = () => {
+        if (!editingPath || !editName.trim()) {
+            setEditingPath(null);
+            return;
+        }
+        const newFullName = editName.trim() + editExt;
+        const originalFile = files.find(f => f.path === editingPath);
+        if (originalFile && newFullName !== originalFile.name) {
+            onRenameFile(editingPath, newFullName);
+        }
+        setEditingPath(null);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleRenameConfirm();
+        } else if (e.key === 'Escape') {
+            setEditingPath(null);
+        }
+    };
+
     return (
         <div className={styles.container}>
             <div className={styles.header}>
@@ -36,10 +87,32 @@ export const Playlist = ({ folderName, files, currentTrack, onTrackSelect, onOpe
                         <div
                             key={file.path}
                             className={`${styles.item} ${currentTrack === file.path ? styles.active : ''}`}
-                            onClick={() => onTrackSelect(file.path)}
+                            onClick={() => {
+                                if (editingPath !== file.path) onTrackSelect(file.path);
+                            }}
                         >
                             <Music size={14} className={styles.icon} />
-                            <span className={styles.name}>{file.name}</span>
+                            {editingPath === file.path ? (
+                                <span className={styles.renameWrap}>
+                                    <input
+                                        ref={setInputRef}
+                                        className={styles.renameInput}
+                                        value={editName}
+                                        onChange={(e) => setEditName(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        onBlur={handleRenameConfirm}
+                                        onClick={(e) => e.stopPropagation()}
+                                    />
+                                    <span className={styles.renameExt}>{editExt}</span>
+                                </span>
+                            ) : (
+                                <span
+                                    className={styles.name}
+                                    onDoubleClick={(e) => handleDoubleClick(e, file)}
+                                >
+                                    {file.name}
+                                </span>
+                            )}
                         </div>
                     ))
                 )}

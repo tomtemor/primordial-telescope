@@ -79,6 +79,40 @@
     color: var(--color-primary);
 }
 
+.name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.renameWrap {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+}
+
+.renameInput {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--color-primary);
+    color: inherit;
+    font-size: inherit;
+    font-family: inherit;
+    padding: 0 0 2px 0;
+    outline: none;
+}
+
+.renameExt {
+    color: var(--text-muted);
+    font-size: inherit;
+    flex-shrink: 0;
+}
+
 .empty {
     padding: 20px;
     text-align: center;

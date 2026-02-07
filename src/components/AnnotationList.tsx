@@ -48,6 +48,9 @@ export const AnnotationList = ({ annotations, currentTime, onUpdate, onDelete, o
                                     className={styles.input}
                                     value={ann.text}
                                     onChange={(e) => onUpdate(ann.id, e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                                    }}
                                     placeholder="Add comments..."
                                 />
                                 <button className={styles.deleteBtn} onClick={() => onDelete(ann.id)}>

@@ -1,4 +1,15 @@
 "use strict";
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -133,7 +144,7 @@ electron_1.ipcMain.handle('dialog:saveProject', function (_, content) { return _
                 return [4 /*yield*/, fs_1.default.promises.writeFile(filePath, content, 'utf-8')];
             case 3:
                 _b.sent();
-                return [2 /*return*/, { success: true, filePath: filePath }];
+                return [2 /*return*/, { success: true, filePath: filePath.replace(/\\/g, '/') }];
             case 4:
                 e_1 = _b.sent();
                 console.error(e_1);
@@ -143,7 +154,7 @@ electron_1.ipcMain.handle('dialog:saveProject', function (_, content) { return _
     });
 }); });
 electron_1.ipcMain.handle('dialog:loadProject', function () { return __awaiter(void 0, void 0, void 0, function () {
-    var _a, canceled, filePaths, content, e_2;
+    var _a, canceled, filePaths, content, data, e_2;
     return __generator(this, function (_b) {
         switch (_b.label) {
             case 0:
@@ -163,12 +174,124 @@ electron_1.ipcMain.handle('dialog:loadProject', function () { return __awaiter(v
                 return [4 /*yield*/, fs_1.default.promises.readFile(filePaths[0], 'utf-8')];
             case 3:
                 content = _b.sent();
-                return [2 /*return*/, JSON.parse(content)];
+                data = JSON.parse(content);
+                data._filePath = filePaths[0].replace(/\\/g, '/');
+                return [2 /*return*/, data];
             case 4:
                 e_2 = _b.sent();
                 console.error(e_2);
                 return [2 /*return*/, null];
             case 5: return [2 /*return*/];
+        }
+    });
+}); });
+// Save project to a known path (no dialog) — used by auto-save
+electron_1.ipcMain.handle('project:saveToPath', function (_, filePath, content) { return __awaiter(void 0, void 0, void 0, function () {
+    var e_3;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                _a.trys.push([0, 2, , 3]);
+                return [4 /*yield*/, fs_1.default.promises.writeFile(filePath, content, 'utf-8')];
+            case 1:
+                _a.sent();
+                return [2 /*return*/, { success: true }];
+            case 2:
+                e_3 = _a.sent();
+                console.error('Auto-save error:', e_3);
+                return [2 /*return*/, { success: false }];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); });
+// Load project from a known path (no dialog) — used by startup auto-load
+electron_1.ipcMain.handle('project:loadFromPath', function (_, filePath) { return __awaiter(void 0, void 0, void 0, function () {
+    var content, data, e_4;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                _a.trys.push([0, 2, , 3]);
+                return [4 /*yield*/, fs_1.default.promises.readFile(filePath, 'utf-8')];
+            case 1:
+                content = _a.sent();
+                data = JSON.parse(content);
+                data._filePath = filePath.replace(/\\/g, '/');
+                return [2 /*return*/, data];
+            case 2:
+                e_4 = _a.sent();
+                console.error('Load from path error:', e_4);
+                return [2 /*return*/, null];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); });
+// Settings persistence
+var settingsPath = path_1.default.join(electron_1.app.getPath('userData'), 'settings.json');
+electron_1.ipcMain.handle('settings:get', function () { return __awaiter(void 0, void 0, void 0, function () {
+    var content, _a;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _b.trys.push([0, 2, , 3]);
+                return [4 /*yield*/, fs_1.default.promises.readFile(settingsPath, 'utf-8')];
+            case 1:
+                content = _b.sent();
+                return [2 /*return*/, JSON.parse(content)];
+            case 2:
+                _a = _b.sent();
+                return [2 /*return*/, {}];
+            case 3: return [2 /*return*/];
+        }
+    });
+}); });
+electron_1.ipcMain.handle('settings:set', function (_, data) { return __awaiter(void 0, void 0, void 0, function () {
+    var existing, content, _a, merged, e_5;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                _b.trys.push([0, 6, , 7]);
+                existing = {};
+                _b.label = 1;
+            case 1:
+                _b.trys.push([1, 3, , 4]);
+                return [4 /*yield*/, fs_1.default.promises.readFile(settingsPath, 'utf-8')];
+            case 2:
+                content = _b.sent();
+                existing = JSON.parse(content);
+                return [3 /*break*/, 4];
+            case 3:
+                _a = _b.sent();
+                return [3 /*break*/, 4];
+            case 4:
+                merged = __assign(__assign({}, existing), data);
+                return [4 /*yield*/, fs_1.default.promises.writeFile(settingsPath, JSON.stringify(merged, null, 2), 'utf-8')];
+            case 5:
+                _b.sent();
+                return [2 /*return*/, { success: true }];
+            case 6:
+                e_5 = _b.sent();
+                console.error('Settings save error:', e_5);
+                return [2 /*return*/, { success: false }];
+            case 7: return [2 /*return*/];
+        }
+    });
+}); });
+// Rename a file on disk
+electron_1.ipcMain.handle('file:rename', function (_, oldPath, newPath) { return __awaiter(void 0, void 0, void 0, function () {
+    var e_6;
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                _a.trys.push([0, 2, , 3]);
+                return [4 /*yield*/, fs_1.default.promises.rename(oldPath, newPath)];
+            case 1:
+                _a.sent();
+                return [2 /*return*/, { success: true }];
+            case 2:
+                e_6 = _a.sent();
+                console.error('Rename error:', e_6);
+                return [2 /*return*/, { success: false, error: e_6.message }];
+            case 3: return [2 /*return*/];
         }
     });
 }); });
