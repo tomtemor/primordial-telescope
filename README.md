@@ -1,73 +1,73 @@
-# React + TypeScript + Vite
+# Wavejotter
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Wavejotter is a powerful, lightweight audio annotation tool built with Electron and React. Designed for researchers, musicians, and data analysts, it allows you to visualize waveforms, create precise time-stamped regions, and manage audio projects effortlessly.
 
-Currently, two official plugins are available:
+## ✨ Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Waveform Visualization**: Smooth, interactive waveform display powered by [WaveSurfer.js](https://wavesurfer-js.org/).
 
-## React Compiler
+- **Precise Annotation**: 
+  - **Navigate Mode**: Click to seek and play.
+  - **Annotate Mode**: Drag to create labeled regions.
+- **Project Management**: Save and Load your work as `.json` project files.
+- **File System Integration**: Open local folders to verify and browse your audio library.
+- **Playback Controls**: Play, Pause, Stop, and Zoom controls.
+- **Keyboard Shortcuts**: Spacebar to toggle playback.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🚀 Getting Started
 
-## Expanding the ESLint configuration
+### Prerequisites
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Node.js (v16 or higher)
+- npm or yarn
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Installation
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/tomtemor/primordial-telescope.git
+   cd primordial-telescope
+   ```
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+2. **Install Dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Run Development Server**
+   ```bash
+   npm run dev
+   ```
+
+## 📦 Building for Production
+
+To create an executable for your OS (Windows, macOS, Linux):
+
+```bash
+npm run build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The output will be in the `dist` folder.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 📖 Usage Guide
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+1. **Open Folder**: Click the folder icon in the sidebar to select a directory containing your audio files (`.wav`, `.mp3`, `.ogg`).
+2. **Select Track**: Click a file in the sidebar to load its waveform.
+3. **Annotate**: 
+   - Switch to **Annotate Mode** (Pencil icon).
+   - Click and drag on the waveform to create a region.
+   - The region will be added to the list on the right.
+4. **Edit**: Double-click an item in the annotation list to edit its label.
+5. **Save**: Click **Save Project** to export your work to a JSON file.
+
+## 🛠️ Tech Stack
+
+- **Electron**: Cross-platform desktop framework.
+- **React**: UI library for building interactive interfaces.
+- **Vite**: Next-generation frontend tooling.
+- **WaveSurfer.js**: Audio visualization library.
+- **TypeScript**: Static typing for robust development.
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
