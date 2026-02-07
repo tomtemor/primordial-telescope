@@ -10,6 +10,7 @@ let mainWindow: BrowserWindow | null = null;
 const createWindow = () => {
     // Create the browser window.
     mainWindow = new BrowserWindow({
+        title: 'Wavejotter',
         width: 1280,
         height: 800,
         backgroundColor: '#0a0a0e', // Void background

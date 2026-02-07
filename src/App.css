@@ -61,8 +61,7 @@
 }
 
 .player-wrapper {
-  flex: 1;
-  min-height: 0;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   padding: 10px;
@@ -70,10 +69,12 @@
 }
 
 .annotation-layer {
-  height: 220px;
+  flex: 1;
+  min-height: 120px;
   border-top: 1px solid var(--border-subtle);
   background: var(--bg-panel);
   padding: 16px 20px;
+  overflow: hidden;
 }
 
 .annotation-panels {

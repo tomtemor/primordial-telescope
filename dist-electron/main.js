@@ -58,6 +58,7 @@ var mainWindow = null;
 var createWindow = function () {
     // Create the browser window.
     mainWindow = new electron_1.BrowserWindow({
+        title: 'Wavejotter',
         width: 1280,
         height: 800,
         backgroundColor: '#0a0a0e', // Void background

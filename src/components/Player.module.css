@@ -2,7 +2,6 @@
     display: flex;
     flex-direction: column;
     width: 100%;
-    height: 100%;
     background-color: var(--bg-app);
     padding: 20px;
     box-sizing: border-box;
@@ -10,12 +9,12 @@
 
 .waveform {
     width: 100%;
-    flex: 1;
-    min-height: 0;
-    /* Prevent flex child from overflowing and causing resize loops */
+    /* Don't flex-grow — waveform has a fixed content height (200px canvas + 20px timeline).
+       flex: 0 0 auto ensures it takes exactly its content size, never stretches or shrinks. */
+    flex: 0 0 auto;
     overflow: hidden;
     position: relative;
-    margin-bottom: 24px;
+    margin-bottom: 8px;
     background: rgba(255, 255, 255, 0.02);
     border-radius: 8px;
     border: 1px solid var(--border-subtle);

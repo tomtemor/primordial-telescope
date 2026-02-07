@@ -2,8 +2,7 @@ import { useRef, useEffect, useState, useCallback } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin from 'wavesurfer.js/dist/plugins/regions.esm.js';
 import TimelinePlugin from 'wavesurfer.js/dist/plugins/timeline.esm.js';
-import SpectrogramPlugin from 'wavesurfer.js/dist/plugins/spectrogram.esm.js';
-import { Play, Pause, Square, ZoomIn, ZoomOut, MousePointer2, Highlighter, ListMusic, SkipBack, SkipForward, AudioLines } from 'lucide-react';
+import { Play, Pause, Square, ZoomIn, ZoomOut, MousePointer2, Highlighter, ListMusic, SkipBack, SkipForward } from 'lucide-react';
 import styles from './Player.module.css';
 import type { Annotation } from './AnnotationList';
 
@@ -32,7 +31,6 @@ export const Player = ({ url, annotations, seekTo, autoPlay, hasPrev, hasNext, o
     const [isReady, setIsReady] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isAnnotationMode, setIsAnnotationMode] = useState(false);
-    const [viewMode, setViewMode] = useState<'waveform' | 'spectrogram'>('waveform');
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const lastTimeUpdateRef = useRef(0);
@@ -69,7 +67,7 @@ export const Player = ({ url, annotations, seekTo, autoPlay, hasPrev, hasNext, o
             cursorColor: '#ffffff',
             barWidth: 2,
             barGap: 3,
-            height: 250,
+            height: 200,
             minPxPerSec: 10,
             fillParent: true,
             // Do NOT pass url here — let the URL effect handle loading
@@ -87,40 +85,6 @@ export const Player = ({ url, annotations, seekTo, autoPlay, hasPrev, hasNext, o
             style: { fontSize: '10px', color: '#888899' },
         });
         ws.registerPlugin(wsTimeline);
-
-        // Spectrogram plugin — alternative frequency view
-        // Note: the plugin always appends itself inside the WaveSurfer wrapper.
-        // We toggle its wrapper's visibility via an effect on viewMode.
-        const wsSpectrogram = SpectrogramPlugin.create({
-            height: 250,
-            labels: true,
-            labelsColor: '#888899',
-            labelsBackground: 'transparent',
-            frequencyMax: 8000,
-            fftSamples: 512,
-            colorMap: 'roseus',
-        });
-        ws.registerPlugin(wsSpectrogram);
-
-        // Tag the spectrogram wrapper so we can find it later for view toggling.
-        // onInit() runs synchronously during registerPlugin, appending the wrapper
-        // as the last child of the WaveSurfer wrapper element.
-        const wsWrapperEl = ws.getWrapper();
-        const specEl = wsWrapperEl.lastElementChild as HTMLElement | null;
-        if (specEl) {
-            specEl.setAttribute('data-spectrogram', 'true');
-            // Position absolutely on top of the waveform so it overlays without layout shift.
-            // Hidden by default (waveform mode). Shown by the viewMode toggle effect.
-            specEl.style.position = 'absolute';
-            specEl.style.top = '0';
-            specEl.style.left = '0';
-            specEl.style.width = '100%';
-            specEl.style.height = '100%';
-            specEl.style.zIndex = '10';
-            specEl.style.display = 'none';
-        }
-        // Ensure the WaveSurfer wrapper is a positioning context
-        wsWrapperEl.style.position = 'relative';
 
         ws.on('ready', () => {
             setIsReady(true);
@@ -304,28 +268,6 @@ export const Player = ({ url, annotations, seekTo, autoPlay, hasPrev, hasNext, o
         }
     }, [zoom, isReady]);
 
-    // Toggle spectrogram overlay visibility.
-    // The spectrogram is absolutely positioned on top of the waveform.
-    // We simply show/hide it. The waveform + cursor stay rendered underneath.
-    useEffect(() => {
-        const wsWrapper = wavesurferRef.current?.getWrapper();
-        if (!wsWrapper) return;
-
-        const spectrogramWrapper = wsWrapper.querySelector('[data-spectrogram]') as HTMLElement | null;
-        if (!spectrogramWrapper) return;
-
-        if (viewMode === 'spectrogram') {
-            spectrogramWrapper.style.display = 'block';
-            // Force the spectrogram canvases to fill the container height
-            const canvasContainer = spectrogramWrapper.querySelector('div') as HTMLElement | null;
-            if (canvasContainer) {
-                canvasContainer.style.height = '100%';
-            }
-        } else {
-            spectrogramWrapper.style.display = 'none';
-        }
-    }, [viewMode, isReady]);
-
     // Spacebar play/pause
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -378,24 +320,6 @@ export const Player = ({ url, annotations, seekTo, autoPlay, hasPrev, hasNext, o
             {error && <div style={{ color: 'red', padding: '10px', background: 'rgba(255,0,0,0.1)', borderRadius: '4px', marginBottom: '10px' }}>Error: {error}</div>}
 
             <div className={styles.topControls}>
-                <div className={styles.modeSwitch}>
-                    <button
-                        className={`${styles.modeBtn} ${viewMode === 'waveform' ? styles.active : ''}`}
-                        onClick={() => setViewMode('waveform')}
-                        title="Waveform View"
-                    >
-                        <AudioLines size={16} />
-                        <span>Waveform</span>
-                    </button>
-                    <button
-                        className={`${styles.modeBtn} ${viewMode === 'spectrogram' ? styles.active : ''}`}
-                        onClick={() => setViewMode('spectrogram')}
-                        title="Spectrogram View"
-                    >
-                        <AudioLines size={16} />
-                        <span>Spectrogram</span>
-                    </button>
-                </div>
                 <button
                     className={`${styles.autoPlayBtn} ${autoPlay ? styles.active : ''}`}
                     onClick={onToggleAutoPlay}
