@@ -10,7 +10,8 @@ try {
         loadProjectFromPath: (filePath: string) => ipcRenderer.invoke('project:loadFromPath', filePath),
         getSettings: () => ipcRenderer.invoke('settings:get'),
         setSettings: (data: Record<string, unknown>) => ipcRenderer.invoke('settings:set', data),
-        renameFile: (oldPath: string, newPath: string) => ipcRenderer.invoke('file:rename', oldPath, newPath)
+        renameFile: (oldPath: string, newPath: string) => ipcRenderer.invoke('file:rename', oldPath, newPath),
+        exportText: (content: string, defaultName?: string) => ipcRenderer.invoke('dialog:exportText', content, defaultName)
     });
     console.log('audioApp exposed successfully');
 } catch (error) {

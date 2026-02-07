@@ -70,11 +70,31 @@
 }
 
 .annotation-layer {
-  height: 200px;
-  /* Draft height */
+  height: 220px;
   border-top: 1px solid var(--border-subtle);
   background: var(--bg-panel);
-  padding: 20px;
+  padding: 16px 20px;
+}
+
+.annotation-panels {
+  display: flex;
+  gap: 0;
+  height: 100%;
+}
+
+.annotation-panel-left {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding-right: 16px;
+  border-right: 1px solid var(--border-subtle);
+}
+
+.annotation-panel-right {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding-left: 16px;
 }
 
 .top-bar .project-controls {

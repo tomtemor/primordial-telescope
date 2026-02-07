@@ -276,9 +276,40 @@ electron_1.ipcMain.handle('settings:set', function (_, data) { return __awaiter(
         }
     });
 }); });
+// Export text file (save dialog for .txt)
+electron_1.ipcMain.handle('dialog:exportText', function (_, content, defaultName) { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, canceled, filePath, e_6;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                if (!mainWindow)
+                    return [2 /*return*/, { success: false }];
+                return [4 /*yield*/, electron_1.dialog.showSaveDialog(mainWindow, {
+                        defaultPath: defaultName || 'annotations.txt',
+                        filters: [{ name: 'Text File', extensions: ['txt'] }]
+                    })];
+            case 1:
+                _a = _b.sent(), canceled = _a.canceled, filePath = _a.filePath;
+                if (canceled || !filePath)
+                    return [2 /*return*/, { success: false }];
+                _b.label = 2;
+            case 2:
+                _b.trys.push([2, 4, , 5]);
+                return [4 /*yield*/, fs_1.default.promises.writeFile(filePath, content, 'utf-8')];
+            case 3:
+                _b.sent();
+                return [2 /*return*/, { success: true, filePath: filePath.replace(/\\/g, '/') }];
+            case 4:
+                e_6 = _b.sent();
+                console.error('Export text error:', e_6);
+                return [2 /*return*/, { success: false }];
+            case 5: return [2 /*return*/];
+        }
+    });
+}); });
 // Rename a file on disk
 electron_1.ipcMain.handle('file:rename', function (_, oldPath, newPath) { return __awaiter(void 0, void 0, void 0, function () {
-    var e_6;
+    var e_7;
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -288,9 +319,9 @@ electron_1.ipcMain.handle('file:rename', function (_, oldPath, newPath) { return
                 _a.sent();
                 return [2 /*return*/, { success: true }];
             case 2:
-                e_6 = _a.sent();
-                console.error('Rename error:', e_6);
-                return [2 /*return*/, { success: false, error: e_6.message }];
+                e_7 = _a.sent();
+                console.error('Rename error:', e_7);
+                return [2 /*return*/, { success: false, error: e_7.message }];
             case 3: return [2 /*return*/];
         }
     });

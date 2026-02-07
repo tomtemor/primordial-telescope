@@ -48,6 +48,7 @@ export const Player = ({ url, annotations, seekTo, autoPlay, hasPrev, hasNext, o
     const processingRegionsRef = useRef(new Set<string>());
     const isSyncingRef = useRef(false);
     const shouldAutoStartRef = useRef(false);
+    const pendingSeekRef = useRef<number | null>(null);
 
     useEffect(() => { onTimeUpdateRef.current = onTimeUpdate; }, [onTimeUpdate]);
     useEffect(() => { onAnnotationCreatedRef.current = onAnnotationCreated; }, [onAnnotationCreated]);
@@ -124,10 +125,20 @@ export const Player = ({ url, annotations, seekTo, autoPlay, hasPrev, hasNext, o
         ws.on('ready', () => {
             setIsReady(true);
             setDuration(ws.getDuration());
+            if (pendingSeekRef.current !== null) {
+                const seekTime = pendingSeekRef.current;
+                pendingSeekRef.current = null;
+                ws.setTime(seekTime);
+            }
             if (shouldAutoStartRef.current) {
                 shouldAutoStartRef.current = false;
                 ws.play();
             }
+            // Force a redraw on next frame so the timeline plugin
+            // recalculates with the correct container width
+            requestAnimationFrame(() => {
+                ws.zoom(ws.options.minPxPerSec);
+            });
         });
         ws.on('play', () => setIsPlaying(true));
         ws.on('pause', () => setIsPlaying(false));
@@ -262,10 +273,15 @@ export const Player = ({ url, annotations, seekTo, autoPlay, hasPrev, hasNext, o
 
     // Handle Seek
     useEffect(() => {
-        if (wavesurferRef.current && seekTo !== undefined && seekTo !== null) {
-            wavesurferRef.current.setTime(seekTo);
+        if (seekTo !== undefined && seekTo !== null) {
+            if (wavesurferRef.current && isReady) {
+                wavesurferRef.current.setTime(seekTo);
+            } else {
+                // Track is loading — queue the seek for the ready handler
+                pendingSeekRef.current = seekTo;
+            }
         }
-    }, [seekTo]);
+    }, [seekTo, isReady]);
 
     // Handle URL changes
     useEffect(() => {

@@ -159,6 +159,25 @@ ipcMain.handle('settings:set', async (_, data: Record<string, unknown>) => {
     }
 });
 
+// Export text file (save dialog for .txt)
+ipcMain.handle('dialog:exportText', async (_, content: string, defaultName?: string) => {
+    if (!mainWindow) return { success: false };
+    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
+        defaultPath: defaultName || 'annotations.txt',
+        filters: [{ name: 'Text File', extensions: ['txt'] }]
+    });
+
+    if (canceled || !filePath) return { success: false };
+
+    try {
+        await fs.promises.writeFile(filePath, content, 'utf-8');
+        return { success: true, filePath: filePath.replace(/\\/g, '/') };
+    } catch (e) {
+        console.error('Export text error:', e);
+        return { success: false };
+    }
+});
+
 // Rename a file on disk
 ipcMain.handle('file:rename', async (_, oldPath: string, newPath: string) => {
     try {

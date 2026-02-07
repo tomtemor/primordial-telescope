@@ -20,6 +20,7 @@ interface AudioAppAPI {
     getSettings: () => Promise<Record<string, any>>;
     setSettings: (data: Record<string, unknown>) => Promise<{ success: boolean }>;
     renameFile: (oldPath: string, newPath: string) => Promise<{ success: boolean; error?: string }>;
+    exportText: (content: string, defaultName?: string) => Promise<{ success: boolean; filePath?: string }>;
 }
 
 interface Window {

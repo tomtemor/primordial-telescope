@@ -2,8 +2,9 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Player } from './components/Player';
 import { Playlist } from './components/Playlist';
 import { AnnotationList } from './components/AnnotationList';
+import { AllAnnotationList } from './components/AllAnnotationList';
 import type { Annotation } from './components/AnnotationList';
-import { Save, FolderInput, FilePlus } from 'lucide-react';
+import { Save, FolderInput, FilePlus, FileText } from 'lucide-react';
 import './App.css';
 
 function App() {
@@ -55,6 +56,51 @@ function App() {
       setProjectFilePath(result.filePath);
       await window.audioApp.setSettings({ lastProjectPath: result.filePath });
     }
+  };
+
+  const formatExportTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = Math.floor(seconds % 60);
+    const ms = Math.floor((seconds % 1) * 100);
+    return `${m}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+  };
+
+  const handleExportAnnotations = async () => {
+    const lines: string[] = [];
+    const projectLabel = projectName || 'Untitled Project';
+    lines.push(`Annotations Export — ${projectLabel}`);
+    lines.push(`Exported: ${new Date().toLocaleString()}`);
+    lines.push('='.repeat(60));
+    lines.push('');
+
+    const entries = Object.entries(projectAnnotations).filter(([, anns]) => anns.length > 0);
+    if (entries.length === 0) {
+      lines.push('(No annotations in this project)');
+    } else {
+      for (const [fileUrl, anns] of entries) {
+        // Derive display name from files list or URL
+        const match = files.find(f => {
+          const url = f.path.startsWith('file:') ? f.path : `file:///${f.path}`;
+          return url === fileUrl;
+        });
+        const displayName = match?.name || decodeURIComponent(fileUrl.split('/').pop() || fileUrl);
+
+        lines.push(`File: ${displayName}`);
+        lines.push('-'.repeat(40));
+
+        const sorted = [...anns].sort((a, b) => a.start - b.start);
+        for (const ann of sorted) {
+          const timeRange = `[${formatExportTime(ann.start)} - ${formatExportTime(ann.end)}]`;
+          const label = ann.text || '(no label)';
+          lines.push(`  ${timeRange}  ${label}`);
+        }
+        lines.push('');
+      }
+    }
+
+    const content = lines.join('\n');
+    const defaultName = `${projectLabel.replace(/[^a-zA-Z0-9_-]/g, '_')}_annotations.txt`;
+    await window.audioApp.exportText(content, defaultName);
   };
 
   const applyProjectData = useCallback(async (data: any) => {
@@ -142,6 +188,19 @@ function App() {
     setSeekTo(null);
     requestAnimationFrame(() => setSeekTo(time));
   }, []);
+
+  const handleAnnotationSelect = useCallback((fileUrl: string, time: number) => {
+    if (fileUrl === currentTrack) {
+      // Same file — just seek
+      handleSeek(time);
+    } else {
+      // Different file — switch track and queue seek.
+      // Player will apply the seek after the new track's ready event
+      // via pendingSeekRef.
+      setCurrentTrack(fileUrl);
+      handleSeek(time);
+    }
+  }, [currentTrack, handleSeek]);
 
   const handleToggleAutoPlay = useCallback(() => {
     setAutoPlay(prev => !prev);
@@ -288,6 +347,9 @@ function App() {
             <button className="icon-btn" onClick={handleSaveProject} title="Save Project As">
               <Save size={20} />
             </button>
+            <button className="icon-btn" onClick={handleExportAnnotations} title="Export Annotations as Text">
+              <FileText size={20} />
+            </button>
           </div>
         </header>
 
@@ -310,17 +372,29 @@ function App() {
         </div>
 
         <div className="annotation-layer">
-          {currentTrack ? (
-            <AnnotationList
-              annotations={currentAnnotations}
-              currentTime={currentTime}
-              onUpdate={handleAnnotationTextUpdate}
-              onDelete={handleAnnotationDelete}
-              onSeek={handleSeek}
-            />
-          ) : (
-            <div style={{ color: 'var(--text-muted)' }}>Select a track to start annotating</div>
-          )}
+          <div className="annotation-panels">
+            <div className="annotation-panel-left">
+              {currentTrack ? (
+                <AnnotationList
+                  annotations={currentAnnotations}
+                  currentTime={currentTime}
+                  onUpdate={handleAnnotationTextUpdate}
+                  onDelete={handleAnnotationDelete}
+                  onSeek={handleSeek}
+                />
+              ) : (
+                <div style={{ color: 'var(--text-muted)' }}>Select a track to start annotating</div>
+              )}
+            </div>
+            <div className="annotation-panel-right">
+              <AllAnnotationList
+                projectAnnotations={projectAnnotations}
+                files={files}
+                currentTrack={currentTrack}
+                onSelect={handleAnnotationSelect}
+              />
+            </div>
+          </div>
         </div>
       </main>
     </div>

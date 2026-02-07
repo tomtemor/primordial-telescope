@@ -11,7 +11,8 @@ try {
         loadProjectFromPath: function (filePath) { return electron_1.ipcRenderer.invoke('project:loadFromPath', filePath); },
         getSettings: function () { return electron_1.ipcRenderer.invoke('settings:get'); },
         setSettings: function (data) { return electron_1.ipcRenderer.invoke('settings:set', data); },
-        renameFile: function (oldPath, newPath) { return electron_1.ipcRenderer.invoke('file:rename', oldPath, newPath); }
+        renameFile: function (oldPath, newPath) { return electron_1.ipcRenderer.invoke('file:rename', oldPath, newPath); },
+        exportText: function (content, defaultName) { return electron_1.ipcRenderer.invoke('dialog:exportText', content, defaultName); }
     });
     console.log('audioApp exposed successfully');
 }
