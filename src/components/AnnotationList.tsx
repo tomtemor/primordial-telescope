@@ -32,7 +32,7 @@ export const AnnotationList = ({ annotations, currentTime, onUpdate, onDelete, o
             <div className={styles.header}>Annotations</div>
             <div className={styles.list}>
                 {sorted.length === 0 ? (
-                    <div className={styles.empty}>Drag on the waveform to create an annotation</div>
+                    <div className={styles.empty}>Select Annotate button and drag on the waveform to create an annotation</div>
                 ) : (
                     sorted.map(ann => {
                         const isActive = currentTime >= ann.start && currentTime <= ann.end;
