@@ -32,7 +32,15 @@ Wavejotter is a powerful, lightweight audio annotation tool built with Electron 
 2. **Install Dependencies**
    ```bash
    npm install
+   npm install
    ```
+
+### 🍎 Mac Users: "Unidentified Developer" Warning
+Since this app is not signed by Apple, you satisfied Gatekeeper manually the first time you open it:
+1. Drag the app to your **Applications** folder.
+2. **Right-click** (or Control-click) the app icon.
+3. Select **Open**.
+4. Click **Open** in the dialog box.
 
 3. **Run Development Server**
    ```bash
