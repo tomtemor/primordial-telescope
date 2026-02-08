@@ -1,7 +1,7 @@
 {
   "name": "wavejotter",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "description": "A lightweight audio annotation tool",
   "author": "Wavejotter Team",
@@ -9,8 +9,8 @@
   "scripts": {
     "dev": "concurrently -k \"npm run dev:react\" \"npm run dev:electron\"",
     "dev:react": "vite",
-    "dev:electron": "wait-on tcp:5173 && tsc -p electron/tsconfig.json && echo {\"type\":\"commonjs\"} > dist-electron/package.json && cross-env NODE_ENV=development electron .",
-    "build": "tsc -b && vite build && tsc -p electron/tsconfig.json && echo {\"type\":\"commonjs\"} > dist-electron/package.json",
+    "dev:electron": "wait-on tcp:5173 && node electron/build.cjs && cross-env NODE_ENV=development electron .",
+    "build": "tsc -b && vite build && node electron/build.cjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "dist": "npm run build && electron-builder",

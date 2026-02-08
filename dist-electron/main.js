@@ -84,6 +84,14 @@ var createWindow = function () {
     else {
         mainWindow.loadFile(path_1.default.join(__dirname, '../dist/index.html'));
     }
+    // Open external links in default browser
+    mainWindow.webContents.setWindowOpenHandler(function (_a) {
+        var url = _a.url;
+        if (url.startsWith('https:') || url.startsWith('http:')) {
+            electron_1.shell.openExternal(url);
+        }
+        return { action: 'deny' };
+    });
 };
 // IPC Handlers
 // Helper for recursive scanning

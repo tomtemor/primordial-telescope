@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import path from 'path';
 import fs from 'fs';
 
@@ -37,6 +37,14 @@ const createWindow = () => {
     } else {
         mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
     }
+
+    // Open external links in default browser
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        if (url.startsWith('https:') || url.startsWith('http:')) {
+            shell.openExternal(url);
+        }
+        return { action: 'deny' };
+    });
 };
 
 // IPC Handlers

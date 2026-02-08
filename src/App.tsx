@@ -3,8 +3,9 @@ import { Player } from './components/Player';
 import { Playlist } from './components/Playlist';
 import { AnnotationList } from './components/AnnotationList';
 import { AllAnnotationList } from './components/AllAnnotationList';
+import { AboutModal } from './components/AboutModal';
 import type { Annotation } from './components/AnnotationList';
-import { Save, FolderInput, FilePlus, FileText } from 'lucide-react';
+import { Save, FolderInput, FilePlus, FileText, HelpCircle } from 'lucide-react';
 import './App.css';
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
   const [folderPath, setFolderPath] = useState<string | undefined>(undefined);
   const [files, setFiles] = useState<Array<{ name: string; path: string }>>([]);
   const [isRecursive, setIsRecursive] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   // Map track path to annotations
   const [projectAnnotations, setProjectAnnotations] = useState<Record<string, Annotation[]>>({});
@@ -401,6 +403,10 @@ function App() {
             <button className="icon-btn" onClick={handleExportAnnotations} title="Export Annotations as Text">
               <FileText size={20} />
             </button>
+            <div className="separator" style={{ width: 1, background: 'var(--border-subtle)', margin: '0 4px' }}></div>
+            <button className="icon-btn" onClick={() => setShowAbout(true)} title="About Wavejotter">
+              <HelpCircle size={20} />
+            </button>
           </div>
         </header>
 
@@ -448,6 +454,8 @@ function App() {
           </div>
         </div>
       </main>
+
+      <AboutModal isOpen={showAbout} onClose={() => setShowAbout(false)} />
     </div>
   );
 }

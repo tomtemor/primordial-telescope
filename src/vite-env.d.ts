@@ -24,6 +24,13 @@ interface AudioAppAPI {
     exportText: (content: string, defaultName?: string) => Promise<{ success: boolean; filePath?: string }>;
 }
 
+declare const __APP_VERSION__: string;
+
+declare module '*.md?raw' {
+    const content: string;
+    export default content;
+}
+
 interface Window {
     audioApp: AudioAppAPI;
 }
