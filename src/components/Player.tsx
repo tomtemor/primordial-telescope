@@ -70,6 +70,7 @@ export const Player = ({ url, annotations, seekTo, autoPlay, hasPrev, hasNext, o
             height: 200,
             minPxPerSec: 10,
             fillParent: true,
+            pixelRatio: window.devicePixelRatio || 1,
             // Do NOT pass url here — let the URL effect handle loading
         });
 
