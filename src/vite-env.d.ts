@@ -12,7 +12,8 @@ interface FolderResult {
 }
 
 interface AudioAppAPI {
-    openFolder: (path?: string) => Promise<FolderResult | null>;
+    openFolder: (options?: { path?: string; recursive?: boolean }) => Promise<FolderResult | null>;
+    openFiles: () => Promise<AudioFile[] | null>;
     saveProject: (content: string) => Promise<{ success: boolean; filePath?: string }>;
     loadProject: () => Promise<any | null>;
     saveProjectToPath: (filePath: string, content: string) => Promise<{ success: boolean }>;

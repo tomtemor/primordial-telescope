@@ -13,10 +13,14 @@ interface PlaylistProps {
     currentTrack?: string;
     onTrackSelect: (path: string) => void;
     onOpenFolder: () => void;
+    onAddFolder: () => void;
+    onAddFiles: () => void;
     onRenameFile: (oldPath: string, newName: string) => void;
+    isRecursive: boolean;
+    onToggleRecursive: () => void;
 }
 
-export const Playlist = ({ folderName, files, currentTrack, onTrackSelect, onOpenFolder, onRenameFile }: PlaylistProps) => {
+export const Playlist = ({ folderName, files, currentTrack, onTrackSelect, onOpenFolder, onAddFolder, onAddFiles, onRenameFile, isRecursive, onToggleRecursive }: PlaylistProps) => {
     const [editingPath, setEditingPath] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
     const [editExt, setEditExt] = useState('');
@@ -69,10 +73,28 @@ export const Playlist = ({ folderName, files, currentTrack, onTrackSelect, onOpe
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <button className={styles.openBtn} onClick={onOpenFolder}>
-                    <FolderOpen size={16} />
-                    <span>Open Folder</span>
-                </button>
+                <div className={styles.controlsRow}>
+                    <button className={styles.openBtn} onClick={onOpenFolder} title="Clear library and open new folder">
+                        <FolderOpen size={16} />
+                        <span>Open</span>
+                    </button>
+                    <button className={styles.addBtn} onClick={onAddFolder} title="Add folder to current library">
+                        <span>+ Folder</span>
+                    </button>
+                    <button className={styles.addBtn} onClick={onAddFiles} title="Add files to current library">
+                        <span>+ Files</span>
+                    </button>
+                </div>
+                <div className={styles.optionsRow}>
+                    <label className={styles.checkboxLabel}>
+                        <input
+                            type="checkbox"
+                            checked={isRecursive}
+                            onChange={onToggleRecursive}
+                        />
+                        <span>Include Subfolders</span>
+                    </label>
+                </div>
             </div>
 
             {folderName && <div className={styles.folderInfo}>{folderName}</div>}

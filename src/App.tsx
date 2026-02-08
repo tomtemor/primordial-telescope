@@ -12,6 +12,7 @@ function App() {
   const [folderName, setFolderName] = useState<string | undefined>(undefined);
   const [folderPath, setFolderPath] = useState<string | undefined>(undefined);
   const [files, setFiles] = useState<Array<{ name: string; path: string }>>([]);
+  const [isRecursive, setIsRecursive] = useState(false);
 
   // Map track path to annotations
   const [projectAnnotations, setProjectAnnotations] = useState<Record<string, Annotation[]>>({});
@@ -32,7 +33,7 @@ function App() {
 
   const handleOpenFolder = useCallback(async () => {
     try {
-      const result = await window.audioApp.openFolder();
+      const result = await window.audioApp.openFolder({ recursive: isRecursive });
       if (result) {
         setFolderName(result.folderName);
         setFolderPath(result.folderPath);
@@ -42,6 +43,47 @@ function App() {
     } catch (err) {
       console.error("Error opening folder:", err);
     }
+  }, [isRecursive]);
+
+  const handleAddFolder = useCallback(async () => {
+    try {
+      const result = await window.audioApp.openFolder({ recursive: isRecursive });
+      if (result) {
+        // If we already have files, this becomes a "Custom Library"
+        setFolderName(prev => prev ? "Custom Library" : result.folderName);
+        setFolderPath(prev => prev ? undefined : result.folderPath); // Clear explicit folder path if mixed
+
+        setFiles(prev => {
+          // Filter duplicates
+          const newFiles = result.files.filter(nf => !prev.some(pf => pf.path === nf.path));
+          return [...prev, ...newFiles];
+        });
+      }
+    } catch (err) {
+      console.error("Error adding folder:", err);
+    }
+  }, [isRecursive]);
+
+  const handleAddFiles = useCallback(async () => {
+    try {
+      const newFiles = await window.audioApp.openFiles();
+      if (newFiles && newFiles.length > 0) {
+        setFolderName(prev => prev ? "Custom Library" : "Selected Files");
+        setFolderPath(undefined);
+
+        setFiles(prev => {
+          // Filter duplicates
+          const uniqueNew = newFiles.filter(nf => !prev.some(pf => pf.path === nf.path));
+          return [...prev, ...uniqueNew];
+        });
+      }
+    } catch (err) {
+      console.error("Error adding files:", err);
+    }
+  }, []);
+
+  const handleToggleRecursive = useCallback(() => {
+    setIsRecursive(prev => !prev);
   }, []);
 
   const handleSaveProject = async () => {
@@ -112,7 +154,12 @@ function App() {
     }
 
     if (data.folderPath) {
-      const result = await window.audioApp.openFolder(data.folderPath);
+      // Pass recursive: true if we assume loaded projects might need it, or we could store that setting in the project file
+      // For now default to false or whatever the current state is? 
+      // Actually, better to just load what is there. The recursive flag is mostly for the *initial* scan.
+      // But scanFolder needs it. Let's assume false for legacy or store it.
+      // For now, let's just fix the argument structure.
+      const result = await window.audioApp.openFolder({ path: data.folderPath, recursive: true });
       if (result) {
         setFolderName(result.folderName);
         setFolderPath(result.folderPath);
@@ -326,7 +373,11 @@ function App() {
             currentTrack={currentTrack ? decodeURIComponent(currentTrack.replace('file:///', '')) : undefined}
             onTrackSelect={handleTrackSelect}
             onOpenFolder={handleOpenFolder}
+            onAddFolder={handleAddFolder}
+            onAddFiles={handleAddFiles}
             onRenameFile={handleRenameFile}
+            isRecursive={isRecursive}
+            onToggleRecursive={handleToggleRecursive}
           />
         </div>
       </aside>

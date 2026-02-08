@@ -4,7 +4,8 @@ var electron_1 = require("electron");
 console.log('Preload script loading...');
 try {
     electron_1.contextBridge.exposeInMainWorld('audioApp', {
-        openFolder: function (path) { return electron_1.ipcRenderer.invoke('dialog:openFolder', path); },
+        openFolder: function (options) { return electron_1.ipcRenderer.invoke('dialog:openFolder', options); },
+        openFiles: function () { return electron_1.ipcRenderer.invoke('dialog:openFiles'); },
         saveProject: function (content) { return electron_1.ipcRenderer.invoke('dialog:saveProject', content); },
         loadProject: function () { return electron_1.ipcRenderer.invoke('dialog:loadProject'); },
         saveProjectToPath: function (filePath, content) { return electron_1.ipcRenderer.invoke('project:saveToPath', filePath, content); },

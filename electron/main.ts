@@ -40,8 +40,34 @@ const createWindow = () => {
 };
 
 // IPC Handlers
-ipcMain.handle('dialog:openFolder', async (_, pathArg?: string) => {
-    let folderPath = pathArg;
+// Helper for recursive scanning
+async function scanFolder(folderPath: string, recursive: boolean): Promise<Array<{ name: string; path: string }>> {
+    let results: Array<{ name: string; path: string }> = [];
+    try {
+        const entries = await fs.promises.readdir(folderPath, { withFileTypes: true });
+        for (const entry of entries) {
+            const fullPath = path.join(folderPath, entry.name);
+            if (entry.isDirectory()) {
+                if (recursive) {
+                    results = results.concat(await scanFolder(fullPath, recursive));
+                }
+            } else if (/\.(wav|mp3|ogg)$/i.test(entry.name)) {
+                results.push({
+                    name: entry.name,
+                    path: fullPath.replace(/\\/g, '/')
+                });
+            }
+        }
+    } catch (error) {
+        console.error(`Failed to scan ${folderPath}:`, error);
+    }
+    return results;
+}
+
+// IPC Handlers
+ipcMain.handle('dialog:openFolder', async (_, options?: { path?: string; recursive?: boolean }) => {
+    let folderPath = options?.path;
+    const recursive = options?.recursive ?? false;
 
     if (!folderPath) {
         if (!mainWindow) return null;
@@ -56,19 +82,27 @@ ipcMain.handle('dialog:openFolder', async (_, pathArg?: string) => {
     }
 
     try {
-        const files = await fs.promises.readdir(folderPath);
-        const audioFiles = files
-            .filter(file => /\.(wav|mp3|ogg)$/i.test(file))
-            .map(file => ({
-                name: file,
-                path: path.join(folderPath!, file).replace(/\\/g, '/')
-            }));
-
+        const audioFiles = await scanFolder(folderPath, recursive);
         return { folderName: path.basename(folderPath), folderPath: folderPath.replace(/\\/g, '/'), files: audioFiles };
     } catch (error) {
         console.error('Failed to read folder:', error);
         return null;
     }
+});
+
+ipcMain.handle('dialog:openFiles', async () => {
+    if (!mainWindow) return null;
+    const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openFile', 'multiSelections'],
+        filters: [{ name: 'Audio Files', extensions: ['wav', 'mp3', 'ogg'] }]
+    });
+
+    if (canceled || filePaths.length === 0) return null;
+
+    return filePaths.map(fp => ({
+        name: path.basename(fp),
+        path: fp.replace(/\\/g, '/')
+    }));
 });
 
 ipcMain.handle('dialog:saveProject', async (_, content: string) => {

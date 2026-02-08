@@ -3,7 +3,8 @@ import { contextBridge, ipcRenderer } from 'electron';
 console.log('Preload script loading...');
 try {
     contextBridge.exposeInMainWorld('audioApp', {
-        openFolder: (path?: string) => ipcRenderer.invoke('dialog:openFolder', path),
+        openFolder: (options?: { path?: string; recursive?: boolean }) => ipcRenderer.invoke('dialog:openFolder', options),
+        openFiles: () => ipcRenderer.invoke('dialog:openFiles'),
         saveProject: (content: string) => ipcRenderer.invoke('dialog:saveProject', content),
         loadProject: () => ipcRenderer.invoke('dialog:loadProject'),
         saveProjectToPath: (filePath: string, content: string) => ipcRenderer.invoke('project:saveToPath', filePath, content),

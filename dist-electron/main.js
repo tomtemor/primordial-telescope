@@ -86,12 +86,64 @@ var createWindow = function () {
     }
 };
 // IPC Handlers
-electron_1.ipcMain.handle('dialog:openFolder', function (_, pathArg) { return __awaiter(void 0, void 0, void 0, function () {
-    var folderPath, _a, canceled, filePaths, files, audioFiles, error_1;
-    return __generator(this, function (_b) {
-        switch (_b.label) {
+// Helper for recursive scanning
+function scanFolder(folderPath, recursive) {
+    return __awaiter(this, void 0, void 0, function () {
+        var results, entries, _i, entries_1, entry, fullPath, _a, _b, error_1;
+        return __generator(this, function (_c) {
+            switch (_c.label) {
+                case 0:
+                    results = [];
+                    _c.label = 1;
+                case 1:
+                    _c.trys.push([1, 9, , 10]);
+                    return [4 /*yield*/, fs_1.default.promises.readdir(folderPath, { withFileTypes: true })];
+                case 2:
+                    entries = _c.sent();
+                    _i = 0, entries_1 = entries;
+                    _c.label = 3;
+                case 3:
+                    if (!(_i < entries_1.length)) return [3 /*break*/, 8];
+                    entry = entries_1[_i];
+                    fullPath = path_1.default.join(folderPath, entry.name);
+                    if (!entry.isDirectory()) return [3 /*break*/, 6];
+                    if (!recursive) return [3 /*break*/, 5];
+                    _b = (_a = results).concat;
+                    return [4 /*yield*/, scanFolder(fullPath, recursive)];
+                case 4:
+                    results = _b.apply(_a, [_c.sent()]);
+                    _c.label = 5;
+                case 5: return [3 /*break*/, 7];
+                case 6:
+                    if (/\.(wav|mp3|ogg)$/i.test(entry.name)) {
+                        results.push({
+                            name: entry.name,
+                            path: fullPath.replace(/\\/g, '/')
+                        });
+                    }
+                    _c.label = 7;
+                case 7:
+                    _i++;
+                    return [3 /*break*/, 3];
+                case 8: return [3 /*break*/, 10];
+                case 9:
+                    error_1 = _c.sent();
+                    console.error("Failed to scan ".concat(folderPath, ":"), error_1);
+                    return [3 /*break*/, 10];
+                case 10: return [2 /*return*/, results];
+            }
+        });
+    });
+}
+// IPC Handlers
+electron_1.ipcMain.handle('dialog:openFolder', function (_, options) { return __awaiter(void 0, void 0, void 0, function () {
+    var folderPath, recursive, _a, canceled, filePaths, audioFiles, error_2;
+    var _b;
+    return __generator(this, function (_c) {
+        switch (_c.label) {
             case 0:
-                folderPath = pathArg;
+                folderPath = options === null || options === void 0 ? void 0 : options.path;
+                recursive = (_b = options === null || options === void 0 ? void 0 : options.recursive) !== null && _b !== void 0 ? _b : false;
                 if (!!folderPath) return [3 /*break*/, 2];
                 if (!mainWindow)
                     return [2 /*return*/, null];
@@ -99,29 +151,45 @@ electron_1.ipcMain.handle('dialog:openFolder', function (_, pathArg) { return __
                         properties: ['openDirectory']
                     })];
             case 1:
-                _a = _b.sent(), canceled = _a.canceled, filePaths = _a.filePaths;
+                _a = _c.sent(), canceled = _a.canceled, filePaths = _a.filePaths;
                 if (canceled || filePaths.length === 0) {
                     return [2 /*return*/, null];
                 }
                 folderPath = filePaths[0];
-                _b.label = 2;
+                _c.label = 2;
             case 2:
-                _b.trys.push([2, 4, , 5]);
-                return [4 /*yield*/, fs_1.default.promises.readdir(folderPath)];
+                _c.trys.push([2, 4, , 5]);
+                return [4 /*yield*/, scanFolder(folderPath, recursive)];
             case 3:
-                files = _b.sent();
-                audioFiles = files
-                    .filter(function (file) { return /\.(wav|mp3|ogg)$/i.test(file); })
-                    .map(function (file) { return ({
-                    name: file,
-                    path: path_1.default.join(folderPath, file).replace(/\\/g, '/')
-                }); });
+                audioFiles = _c.sent();
                 return [2 /*return*/, { folderName: path_1.default.basename(folderPath), folderPath: folderPath.replace(/\\/g, '/'), files: audioFiles }];
             case 4:
-                error_1 = _b.sent();
-                console.error('Failed to read folder:', error_1);
+                error_2 = _c.sent();
+                console.error('Failed to read folder:', error_2);
                 return [2 /*return*/, null];
             case 5: return [2 /*return*/];
+        }
+    });
+}); });
+electron_1.ipcMain.handle('dialog:openFiles', function () { return __awaiter(void 0, void 0, void 0, function () {
+    var _a, canceled, filePaths;
+    return __generator(this, function (_b) {
+        switch (_b.label) {
+            case 0:
+                if (!mainWindow)
+                    return [2 /*return*/, null];
+                return [4 /*yield*/, electron_1.dialog.showOpenDialog(mainWindow, {
+                        properties: ['openFile', 'multiSelections'],
+                        filters: [{ name: 'Audio Files', extensions: ['wav', 'mp3', 'ogg'] }]
+                    })];
+            case 1:
+                _a = _b.sent(), canceled = _a.canceled, filePaths = _a.filePaths;
+                if (canceled || filePaths.length === 0)
+                    return [2 /*return*/, null];
+                return [2 /*return*/, filePaths.map(function (fp) { return ({
+                        name: path_1.default.basename(fp),
+                        path: fp.replace(/\\/g, '/')
+                    }); })];
         }
     });
 }); });
