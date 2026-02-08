@@ -1,6 +1,6 @@
-import React from 'react';
 import { X, Github, Coffee } from 'lucide-react';
 import styles from './AboutModal.module.css';
+import changelog from '../../CHANGELOG.md?raw';
 
 interface AboutModalProps {
     isOpen: boolean;
@@ -28,6 +28,11 @@ export const AboutModal = ({ isOpen, onClose }: AboutModalProps) => {
                         A powerful, lightweight audio annotation tool built for researchers,
                         musicians, and data analysts.
                     </p>
+
+                    <div className={styles.changelog}>
+                        <h3>Recent Changes</h3>
+                        <pre>{changelog}</pre>
+                    </div>
 
                     <div className={styles.links}>
                         <a

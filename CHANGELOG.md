@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.0.1
+## v1.0.2
 - Fixed build configuration for macOS (Invalid package config)
 - Added "About" modal with version and link info
 - Improved "Open Folder" to support recursive scanning
